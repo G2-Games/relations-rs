@@ -145,7 +145,15 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is asymmetric
     fn is_asymmetric(&self) -> bool {
-        self.is_antisymmetric() && self.is_irreflexive()
+        for i in 0..self.len() {
+            for x in 0..self.len() {
+                if self.matrix[x][i] & self.matrix[i][x] != 0 {
+                    return false
+                }
+            }
+        }
+
+        true
     }
 
     /// Tests if the given matrix is transitive
@@ -163,12 +171,6 @@ impl<const S: usize> Matrix<S> {
                 }
             }
         }
-
-        /*
-        for row in &output {
-            println!("{:?}", row);
-        }
-        */
 
         true
     }
