@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use std::{fmt::Display, time::Instant};
+use rayon::prelude::*;
 
 fn main() {
     let input_matrix = [
@@ -8,28 +9,43 @@ fn main() {
         [0, 1, 1, 0],
     ];
 
-    let matrix = Matrix::new(input_matrix);
+    let matrix = Matrix::new(input_matrix.into());
 
-    println!("Input Matrix:");
-    println!("{}", matrix);
-    println!();
+    loop {
+        println!("----------");
+        let timer = Instant::now();
+        let rand: Matrix<50_000> = Matrix::new_random();
+        println!("Constructing random matrix took {:#?}", timer.elapsed());
 
-    dbg!(matrix.is_reflexive());
-    dbg!(matrix.is_irreflexive());
-    dbg!(matrix.is_symmetric());
-    dbg!(matrix.is_antisymmetric());
-    dbg!(matrix.is_asymmetric());
-    dbg!(matrix.is_transitive());
+        let timer = Instant::now();
+        println!("Reflexive: {} in {:#?}", rand.is_reflexive(), timer.elapsed());
+
+        let timer = Instant::now();
+        println!("Irreflexive: {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
+
+        let timer = Instant::now();
+        println!("Symmetric: {} in {:#?}", rand.is_symmetric(), timer.elapsed());
+
+        let timer = Instant::now();
+        println!("Antisymmetric: {} in {:#?}", rand.is_antisymmetric(), timer.elapsed());
+
+        let timer = Instant::now();
+        println!("Asymmetric: {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
+
+        let timer = Instant::now();
+        println!("Transitive: {} in {:#?}", rand.is_transitive(), timer.elapsed());
+        //println!("Running checks took {:#?}", timer.elapsed());
+    }
 }
 
 struct Matrix<const S: usize> {
-    matrix: [[u8; S]; S],
+    matrix: Box<[[u8; S]; S]>,
 }
 
 impl<const S: usize> Display for Matrix<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut rows = Vec::new();
-        for row in &self.matrix {
+        for row in *self.matrix {
             rows.push(format!("{:?}", row))
         }
         let rows = rows.join("\n");
@@ -39,7 +55,24 @@ impl<const S: usize> Display for Matrix<S> {
 
 impl<const S: usize> Matrix<S> {
     /// Create a new square matrix
-    fn new(matrix: [[u8; S]; S]) -> Self {
+    fn new(matrix: Box<[[u8; S]; S]>) -> Self {
+        Self {
+            matrix
+        }
+    }
+
+    /// Create a new square matrix initalized with random values
+    fn new_random() -> Self {
+        let mut matrix = Box::new([
+            [0; S]; S
+        ]);
+
+        matrix.par_iter_mut().for_each(|row| {
+            for i in row.iter_mut() {
+                *i = fastrand::bool().into()
+            }
+        });
+
         Self {
             matrix
         }
@@ -109,11 +142,12 @@ impl<const S: usize> Matrix<S> {
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
         let length = self.len();
-        let mut output = self.matrix;
+        let mut output = self.matrix.clone();
         for k in 0..length {
             for i in 0..length {
+                let v2 = output[i][k];
                 for j in 0..length {
-                    output[i][j] |= output[i][k] & output[k][j];
+                    output[i][j] |= v2 & output[k][j];
                     if output[i][j] != self.matrix[i][j] {
                         return false
                     }
@@ -143,7 +177,7 @@ mod matrix {
                 [0, 1, 0, 1],
                 [0, 0, 1, 1],
                 [0, 0, 0, 1]
-            ]).is_reflexive()
+            ].into()).is_reflexive()
         );
     }
 
@@ -155,7 +189,7 @@ mod matrix {
                 [1, 0, 1, 1],
                 [1, 1, 0, 1],
                 [0, 1, 1, 0]
-            ]).is_irreflexive()
+            ].into()).is_irreflexive()
         );
     }
 
@@ -167,7 +201,7 @@ mod matrix {
                 [1, 0, 1, 1],
                 [1, 1, 1, 1],
                 [1, 1, 1, 0]
-            ]).is_symmetric()
+            ].into()).is_symmetric()
         );
     }
 
@@ -179,7 +213,7 @@ mod matrix {
                 [1, 0, 0, 0],
                 [1, 1, 0, 1],
                 [0, 1, 0, 1]
-            ]).is_antisymmetric()
+            ].into()).is_antisymmetric()
         );
     }
 
@@ -191,7 +225,7 @@ mod matrix {
                 [1, 0, 0, 0],
                 [1, 1, 0, 1],
                 [0, 1, 0, 0]
-            ]).is_asymmetric()
+            ].into()).is_asymmetric()
         );
     }
 
@@ -203,7 +237,7 @@ mod matrix {
                 [0, 1, 0, 0],
                 [0, 1, 1, 1],
                 [0, 0, 0, 0]
-            ]).is_transitive()
+            ].into()).is_transitive()
         );
     }
 }
