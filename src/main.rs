@@ -1,57 +1,133 @@
+use std::fmt::Display;
+
 fn main() {
-    let input_matrix = vec![
-        vec![1, 1, 0, 0],
-        vec![1, 1, 0, 1],
-        vec![0, 0, 1, 0],
-        vec![0, 1, 0, 1]
+    let input_matrix = [
+        [0, 1, 1, 0],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [0, 1, 1, 0]
     ];
 
+    let matrix = Matrix::new(input_matrix);
+
     println!("Input Matrix:");
-    for row in &input_matrix {
-        println!("{:?}", row);
-    }
+    println!("{}", matrix);
     println!();
 
-    dbg!(is_reflexive(&input_matrix));
-    dbg!(is_irreflexive(&input_matrix));
-    dbg!(is_symmetric(&input_matrix));
+    dbg!(matrix.is_reflexive());
+    dbg!(matrix.is_irreflexive());
+    dbg!(matrix.is_symmetric());
+    dbg!(matrix.is_antisymmetric());
+    dbg!(matrix.is_asymmetric());
+    dbg!(matrix.is_transitive());
 }
 
-/// Tests if the given matrix is reflexive
-fn is_reflexive(matrix: &Vec<Vec<u8>>) -> bool {
-    for i in 0..matrix.len() {
-        if matrix[i][i] == 0 {
-            return false
+struct Matrix<const S: usize> {
+    matrix: [[u8; S]; S],
+}
+
+impl<const S: usize> Display for Matrix<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut rows = Vec::new();
+        for row in &self.matrix {
+            rows.push(format!("{:?}", row))
+        }
+        let rows = rows.join("\n");
+        write!(f, "{}", rows)
+    }
+}
+
+impl<const S: usize> Matrix<S> {
+    /// Create a new square matrix
+    fn new(matrix: [[u8; S]; S]) -> Self {
+        Self {
+            matrix
         }
     }
 
-    true
-}
-
-/// Tests if the given matrix is irreflexive
-fn is_irreflexive(matrix: &Vec<Vec<u8>>) -> bool {
-    for i in 0..matrix.len() {
-        if matrix[i][i] == 1 {
-            return false
-        }
+    #[inline]
+    const fn len(&self) -> usize {
+        self.matrix.len()
     }
 
-    true
-}
-
-/// Tests if the given matrix is symmetric
-fn is_symmetric(matrix: &Vec<Vec<u8>>) -> bool {
-    for i in 0..matrix.len() {
-        for x in 0..matrix.len() {
-            if matrix[x][i] != matrix[i][x] {
+    /// Tests if the given matrix is reflexive
+    fn is_reflexive(&self) -> bool {
+        for i in 0..self.len() {
+            if self.matrix[i][i] == 0 {
                 return false
             }
         }
+
+        true
     }
 
-    true
-}
+    /// Tests if the given matrix is irreflexive
+    fn is_irreflexive(&self) -> bool {
+        for i in 0..self.len() {
+            if self.matrix[i][i] == 1 {
+                return false
+            }
+        }
 
-fn is_antisymmetric(matrix: &Vec<Vec<u8>>) -> bool {
+        true
+    }
 
+    /// Tests if the given matrix is symmetric
+    fn is_symmetric(&self) -> bool {
+        for i in 0..self.len() {
+            for x in 0..self.len() {
+                if self.matrix[x][i] != self.matrix[i][x] {
+                    return false
+                }
+            }
+        }
+
+        true
+    }
+
+    /// Tests if the given matrix is antisymmetric
+    fn is_antisymmetric(&self) -> bool {
+        for i in 0..self.len() {
+            for x in 0..self.len() {
+                if self.matrix[x][i] & self.matrix[i][x] != 0 {
+                    return false
+                }
+            }
+        }
+
+        true
+    }
+
+    /// Tests if the given matrix is asymmetric
+    fn is_asymmetric(&self) -> bool {
+        if self.is_antisymmetric() && self.is_irreflexive() {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Tests if the given matrix is transitive
+    fn is_transitive(&self) -> bool {
+        let length = self.len();
+        let mut output = self.matrix.clone();
+        for k in 0..length {
+            for i in 0..length {
+                for j in 0..length {
+                    output[i][j] = output[i][j] | (output[i][k] & output[k][j]);
+                    if output[i][j] != self.matrix[i][j] {
+                        return false
+                    }
+                }
+            }
+        }
+
+        /*
+        for row in &output {
+            println!("{:?}", row);
+        }
+        */
+
+        true
+    }
 }
