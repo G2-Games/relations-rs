@@ -1,4 +1,4 @@
-use std::{fmt::Display, time::Instant};
+use std::{fmt::Display, thread::sleep, time::{Duration, Instant}};
 use rayon::prelude::*;
 
 fn main() {
@@ -14,27 +14,36 @@ fn main() {
     loop {
         println!("----------");
         let timer = Instant::now();
-        let rand: Matrix<50_000> = Matrix::new_random();
+        let rand: Matrix<100_000> = Matrix::new_random();
+
+        println!("Random {}x{} Matrix:", rand.len(), rand.len());
+        if rand.len() < 10 {
+            println!("{}", rand);
+        } else {
+            println!("NOT PRINTING; size >= 10x10");
+        }
+
         println!("Constructing random matrix took {:#?}", timer.elapsed());
 
         let timer = Instant::now();
-        println!("Reflexive: {} in {:#?}", rand.is_reflexive(), timer.elapsed());
+        println!("Reflexive:     {} in {:#?}", rand.is_reflexive(), timer.elapsed());
 
         let timer = Instant::now();
-        println!("Irreflexive: {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
+        println!("Irreflexive:   {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
 
         let timer = Instant::now();
-        println!("Symmetric: {} in {:#?}", rand.is_symmetric(), timer.elapsed());
+        println!("Symmetric:     {} in {:#?}", rand.is_symmetric(), timer.elapsed());
 
         let timer = Instant::now();
         println!("Antisymmetric: {} in {:#?}", rand.is_antisymmetric(), timer.elapsed());
 
         let timer = Instant::now();
-        println!("Asymmetric: {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
+        println!("Asymmetric:    {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
 
         let timer = Instant::now();
-        println!("Transitive: {} in {:#?}", rand.is_transitive(), timer.elapsed());
+        println!("Transitive:    {} in {:#?}", rand.is_transitive(), timer.elapsed());
         //println!("Running checks took {:#?}", timer.elapsed());
+        sleep(Duration::from_millis(100));
     }
 }
 

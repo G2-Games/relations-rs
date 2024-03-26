@@ -8,5 +8,4 @@ lto = true
 
 [dependencies]
 fastrand = "2.0.2"
-rand = { version = "0.8.5", features = ["small_rng"] }
 rayon = "1.10.0"
