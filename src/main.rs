@@ -5,7 +5,7 @@ fn main() {
         [0, 1, 1, 0],
         [1, 0, 0, 1],
         [1, 0, 0, 1],
-        [0, 1, 1, 0]
+        [0, 1, 1, 0],
     ];
 
     let matrix = Matrix::new(input_matrix);
@@ -89,6 +89,9 @@ impl<const S: usize> Matrix<S> {
     fn is_antisymmetric(&self) -> bool {
         for i in 0..self.len() {
             for x in 0..self.len() {
+                if x == i {
+                    continue
+                }
                 if self.matrix[x][i] & self.matrix[i][x] != 0 {
                     return false
                 }
@@ -129,5 +132,82 @@ impl<const S: usize> Matrix<S> {
         */
 
         true
+    }
+}
+
+#[cfg(test)]
+mod matrix {
+    use crate::Matrix;
+
+    #[test]
+    fn reflexive() {
+        assert!(
+            Matrix::new([
+                [1, 1, 1, 0],
+                [0, 1, 0, 1],
+                [0, 0, 1, 1],
+                [0, 0, 0, 1]
+            ]).is_reflexive()
+        );
+    }
+
+    #[test]
+    fn irreflexive() {
+        assert!(
+            Matrix::new([
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [1, 1, 0, 1],
+                [0, 1, 1, 0]
+            ]).is_irreflexive()
+        );
+    }
+
+    #[test]
+    fn symmetric() {
+        assert!(
+            Matrix::new([
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 0]
+            ]).is_symmetric()
+        );
+    }
+
+    #[test]
+    fn antisymmetric() {
+        assert!(
+            Matrix::new([
+                [0, 0, 0, 1],
+                [1, 0, 0, 0],
+                [1, 1, 0, 1],
+                [0, 1, 0, 1]
+            ]).is_antisymmetric()
+        );
+    }
+
+    #[test]
+    fn asymmetric() {
+        assert!(
+            Matrix::new([
+                [0, 0, 0, 1],
+                [1, 0, 0, 0],
+                [1, 1, 0, 1],
+                [0, 1, 0, 0]
+            ]).is_asymmetric()
+        );
+    }
+
+    #[test]
+    fn transitive() {
+        assert!(
+            Matrix::new([
+                [1, 1, 1, 1],
+                [0, 1, 0, 0],
+                [0, 1, 1, 1],
+                [0, 0, 0, 0]
+            ]).is_transitive()
+        );
     }
 }
