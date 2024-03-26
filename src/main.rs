@@ -103,21 +103,17 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is asymmetric
     fn is_asymmetric(&self) -> bool {
-        if self.is_antisymmetric() && self.is_irreflexive() {
-            true
-        } else {
-            false
-        }
+        self.is_antisymmetric() && self.is_irreflexive()
     }
 
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
         let length = self.len();
-        let mut output = self.matrix.clone();
+        let mut output = self.matrix;
         for k in 0..length {
             for i in 0..length {
                 for j in 0..length {
-                    output[i][j] = output[i][j] | (output[i][k] & output[k][j]);
+                    output[i][j] |= output[i][k] & output[k][j];
                     if output[i][j] != self.matrix[i][j] {
                         return false
                     }
