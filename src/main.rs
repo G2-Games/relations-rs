@@ -3,48 +3,45 @@ use rayon::prelude::*;
 
 fn main() {
     let input_matrix = [
-        [0, 1, 1, 0],
-        [1, 0, 0, 1],
-        [1, 0, 0, 1],
-        [0, 1, 1, 0],
+       //a, b, c
+        [0, 1, 1],//a
+        [0, 0, 1],//b
+        [0, 0, 0],//c
     ];
 
     let matrix = Matrix::new(input_matrix.into());
 
-    loop {
-        println!("----------");
-        let timer = Instant::now();
-        let rand: Matrix<4> = Matrix::new_random();
+    println!("----------");
+    let timer = Instant::now();
+    //let rand: Matrix<10_000> = Matrix::new_random();
+    let rand = &matrix;
 
-        println!("Random {}x{} Matrix:", rand.len(), rand.len());
-        if rand.len() < 10 {
-            println!("{}", rand);
-        } else {
-            println!("NOT PRINTING; size >= 10x10");
-        }
-
-        println!("Constructing random matrix took {:#?}", timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Reflexive:     {} in {:#?}", rand.is_reflexive(), timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Irreflexive:   {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Symmetric:     {} in {:#?}", rand.is_symmetric(), timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Antisymmetric: {} in {:#?}", rand.is_antisymmetric(), timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Asymmetric:    {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
-
-        let timer = Instant::now();
-        println!("Transitive:    {} in {:#?}", rand.is_transitive(), timer.elapsed());
-        //println!("Running checks took {:#?}", timer.elapsed());
-        sleep(Duration::from_millis(100));
+    println!("{}x{} Matrix:", rand.len(), rand.len());
+    if rand.len() < 10 {
+        println!("{}", rand);
+    } else {
+        println!("NOT PRINTING; size >= 10x10");
     }
+
+    println!("Constructing random matrix took {:#?}", timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Reflexive:     {} in {:#?}", rand.is_reflexive(), timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Irreflexive:   {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Symmetric:     {} in {:#?}", rand.is_symmetric(), timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Antisymmetric: {} in {:#?}", rand.is_antisymmetric(), timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Asymmetric:    {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
+
+    let timer = Instant::now();
+    println!("Transitive:    {} in {:#?}", rand.is_transitive(), timer.elapsed());
 }
 
 struct Matrix<const S: usize> {
@@ -158,21 +155,13 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
-        // Get a mutable clone of the matrix to operate on
-        let mut output = self.matrix.clone();
-
         // Use Warshall's algorithm to determine transitivity
-        for k in 0..self.len() {
-            for i in 0..self.len() {
-                // Cache the first value which would otherwise have to be read
-                // every time
-                let first = output[i][k];
-                for j in 0..self.len() {
-                    output[i][j] |= first & output[k][j];
-
+        for i in 0..self.len() {
+            for j in 0..self.len() {
+                for k in 0..self.len() {
                     // Determine if the new value in the output matrix is the
                     // same as the input, if not the original is NOT transitive
-                    if output[i][j] != self.matrix[i][j] {
+                    if self.matrix[j][k] != self.matrix[j][k] | (self.matrix[j][i] & self.matrix[i][k]) {
                         return false
                     }
                 }
