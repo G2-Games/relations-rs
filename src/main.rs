@@ -1,4 +1,4 @@
-use std::{fmt::Display, thread::sleep, time::{Duration, Instant}, sync::{Arc, RwLock}};
+use std::{fmt::Display, thread::sleep, time::{Duration, Instant}};
 use rayon::prelude::*;
 
 fn main() {
@@ -158,25 +158,29 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
-        let output = Arc::new(RwLock::new(self.matrix.clone()));
-        let result = match (0..self.len()).into_par_iter().try_for_each(|k| {
+        // Get a mutable clone of the matrix to operate on
+        let mut output = self.matrix.clone();
+
+        // Use Warshall's algorithm to determine transitivity
+        for k in 0..self.len() {
             for i in 0..self.len() {
-                let ik = output.read().unwrap()[i][k];
+                // Cache the first value which would otherwise have to be read
+                // every time
+                let first = output[i][k];
                 for j in 0..self.len() {
-                    let kj = output.read().unwrap()[k][j];
-                    output.write().unwrap()[i][j] |= ik & kj;
-                    if output.read().unwrap()[i][j] != self.matrix[i][j] {
-                        return Err(())
+                    output[i][j] |= first & output[k][j];
+
+                    // Determine if the new value in the output matrix is the
+                    // same as the input, if not the original is NOT transitive
+                    if output[i][j] != self.matrix[i][j] {
+                        return false
                     }
                 }
             }
-            Ok(())
-        }) {
-            Ok(_) => true,
-            Err(_) => false,
-        };
+        }
 
-        result
+        // If never returned false, then it must be true
+        true
     }
 }
 
@@ -248,8 +252,8 @@ mod matrix {
     fn transitive() {
         assert!(
             Matrix::new([
-                [1, 1, 1, 0],
-                [0, 0, 0, 0],
+                [1, 1, 1, 1],
+                [0, 1, 0, 0],
                 [0, 1, 1, 1],
                 [0, 0, 0, 0]
             ].into()).is_transitive()
