@@ -5,7 +5,9 @@ edition = "2021"
 
 [profile.release]
 lto = true
+codegen-units = 1
 
 [dependencies]
 fastrand = "2.0.2"
 rayon = "1.10.0"
+

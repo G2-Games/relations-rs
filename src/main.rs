@@ -2,19 +2,41 @@ use std::{fmt::Display, thread::sleep, time::{Duration, Instant}};
 use rayon::prelude::*;
 
 fn main() {
+    /*
     let input_matrix = [
-       //a, b, c
-        [0, 1, 1],//a
-        [0, 0, 1],//b
-        [0, 0, 0],//c
+        [1, 1, 1, 0],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+        [0, 0, 0, 0],
     ];
-
     let matrix = Matrix::new(input_matrix.into());
+    */
 
+    let timer = Instant::now();
+    let mut rand: Matrix<1_000> = Matrix::new_random();
+    println!(
+        "Creating random {}x{} matrix took {:?}",
+        rand.len(),
+        rand.len(),
+        timer.elapsed()
+    );
+
+    let timer = Instant::now();
+    dbg!(rand.is_transitive());
+    println!("Checking if it is transitive took {:?}", timer.elapsed());
+
+    let timer = Instant::now();
+    rand.make_transitive();
+    println!("Making random matrix transitive took {:?}", timer.elapsed());
+
+    let timer = Instant::now();
+    dbg!(rand.is_transitive());
+    println!("Checking if it is transitive took {:?}", timer.elapsed());
+
+    /*
     println!("----------");
     let timer = Instant::now();
-    //let rand: Matrix<10_000> = Matrix::new_random();
-    let rand = &matrix;
+    let rand: Matrix<100_000> = Matrix::new_random();
 
     println!("{}x{} Matrix:", rand.len(), rand.len());
     if rand.len() < 10 {
@@ -42,6 +64,7 @@ fn main() {
 
     let timer = Instant::now();
     println!("Transitive:    {} in {:#?}", rand.is_transitive(), timer.elapsed());
+    */
 }
 
 struct Matrix<const S: usize> {
@@ -156,20 +179,38 @@ impl<const S: usize> Matrix<S> {
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
         // Use Warshall's algorithm to determine transitivity
-        for i in 0..self.len() {
+        match (0..self.len()).into_par_iter().try_for_each(|i| {
             for j in 0..self.len() {
                 for k in 0..self.len() {
-                    // Determine if the new value in the output matrix is the
-                    // same as the input, if not the original is NOT transitive
                     if self.matrix[j][k] != self.matrix[j][k] | (self.matrix[j][i] & self.matrix[i][k]) {
-                        return false
+                        return None
                     }
                 }
             }
+            Some(())
+        }) {
+            Some(_) => true,
+            None => false,
         }
+    }
 
-        // If never returned false, then it must be true
-        true
+    /// Tests if the matrix is an equivalence relation
+    fn is_equivalence(&self) -> bool {
+        self.is_reflexive()
+            && self.is_irreflexive()
+            && self.is_transitive()
+    }
+
+    /// Makes the current matrix transitive
+    fn make_transitive(&mut self) {
+        for k in 0..self.len() {
+            for i in 0..self.len() {
+                let v2 = self.matrix[i][k];
+                for j in 0..self.len() {
+                    self.matrix[i][j] |= v2 & self.matrix[k][j];
+                }
+            }
+        }
     }
 }
 
