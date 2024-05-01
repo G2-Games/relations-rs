@@ -1,73 +1,75 @@
-use std::{fmt::Display, thread::sleep, time::{Duration, Instant}};
+use std::fmt::Display;
 use rayon::prelude::*;
 
 fn main() {
-    /*
     let input_matrix = [
-        [1, 1, 1, 0],
-        [0, 0, 0, 1],
-        [1, 1, 1, 1],
-        [0, 0, 0, 0],
+        [1, 0, 0, 1],
+        [0, 1, 1, 0],
+        [0, 1, 1, 0],
+        [1, 0, 0, 1]
     ];
     let matrix = Matrix::new(input_matrix.into());
-    */
 
-    let timer = Instant::now();
-    let mut rand: Matrix<1_000> = Matrix::new_random();
-    println!(
-        "Creating random {}x{} matrix took {:?}",
-        rand.len(),
-        rand.len(),
-        timer.elapsed()
-    );
+    println!("Input matrix:\n{}\n-------", matrix);
 
-    let timer = Instant::now();
-    dbg!(rand.is_transitive());
-    println!("Checking if it is transitive took {:?}", timer.elapsed());
+    println!("This matrix is...");
 
-    let timer = Instant::now();
-    rand.make_transitive();
-    println!("Making random matrix transitive took {:?}", timer.elapsed());
-
-    let timer = Instant::now();
-    dbg!(rand.is_transitive());
-    println!("Checking if it is transitive took {:?}", timer.elapsed());
-
-    /*
-    println!("----------");
-    let timer = Instant::now();
-    let rand: Matrix<100_000> = Matrix::new_random();
-
-    println!("{}x{} Matrix:", rand.len(), rand.len());
-    if rand.len() < 10 {
-        println!("{}", rand);
-    } else {
-        println!("NOT PRINTING; size >= 10x10");
+    print!("    Reflexive: ");
+    match matrix.is_reflexive() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => {
+            println!("[\x1b[0;31mX\x1b[0m]");
+            println!("Computed reflexive closure:");
+            println!("{}", matrix.make_reflexive());
+        }
     }
 
-    println!("Constructing random matrix took {:#?}", timer.elapsed());
+    print!("  Irreflexive: ");
+    match matrix.is_irreflexive() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => println!("[\x1b[0;31mX\x1b[0m]"),
+    }
 
-    let timer = Instant::now();
-    println!("Reflexive:     {} in {:#?}", rand.is_reflexive(), timer.elapsed());
+    print!("    Symmetric: ");
+    match matrix.is_symmetric() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => {
+            println!("[\x1b[0;31mX\x1b[0m]");
+            println!("Computed symmetric closure:");
+            println!("{}", matrix.make_symmetric());
+        }
+    }
 
-    let timer = Instant::now();
-    println!("Irreflexive:   {} in {:#?}", rand.is_irreflexive(), timer.elapsed());
+    print!("Antisymmetric: ");
+    match matrix.is_antisymmetric() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => println!("[\x1b[0;31mX\x1b[0m]"),
+    }
 
-    let timer = Instant::now();
-    println!("Symmetric:     {} in {:#?}", rand.is_symmetric(), timer.elapsed());
+    print!("   Asymmetric: ");
+    match matrix.is_asymmetric() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => println!("[\x1b[0;31mX\x1b[0m]"),
+    }
 
-    let timer = Instant::now();
-    println!("Antisymmetric: {} in {:#?}", rand.is_antisymmetric(), timer.elapsed());
+    print!("   Transitive: ");
+    match matrix.is_transitive() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => {
+            println!("[\x1b[0;31mX\x1b[0m]");
+            println!("Computed transitive closure:");
+            println!("{}", matrix.make_transitive());
+        }
+    }
 
-    let timer = Instant::now();
-    println!("Asymmetric:    {} in {:#?}", rand.is_asymmetric(), timer.elapsed());
-
-    let timer = Instant::now();
-    println!("Transitive:    {} in {:#?}", rand.is_transitive(), timer.elapsed());
-    */
+    print!("  Equivalence: ");
+    match matrix.is_equivalence() {
+        true => println!("[\x1b[0;32m✓\x1b[0m]"),
+        false => println!("[\x1b[0;31mX\x1b[0m]"),
+    }
 }
 
-struct Matrix<const S: usize> {
+pub struct Matrix<const S: usize> {
     matrix: Box<[[u8; S]; S]>,
 }
 
@@ -84,14 +86,14 @@ impl<const S: usize> Display for Matrix<S> {
 
 impl<const S: usize> Matrix<S> {
     /// Create a new square matrix
-    fn new(matrix: Box<[[u8; S]; S]>) -> Self {
+    const fn new(matrix: Box<[[u8; S]; S]>) -> Self {
         Self {
             matrix
         }
     }
 
     /// Create a new square matrix initalized with random values
-    fn new_random() -> Self {
+    pub fn new_random() -> Self {
         let mut matrix = Box::new([
             [0; S]; S
         ]);
@@ -114,10 +116,12 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is reflexive
     fn is_reflexive(&self) -> bool {
-        for i in 0..self.len() {
+        let mut i = 0;
+        while i < self.len() {
             if self.matrix[i][i] == 0 {
                 return false
             }
+            i += 1
         }
 
         true
@@ -178,8 +182,9 @@ impl<const S: usize> Matrix<S> {
 
     /// Tests if the given matrix is transitive
     fn is_transitive(&self) -> bool {
-        // Use Warshall's algorithm to determine transitivity
-        match (0..self.len()).into_par_iter().try_for_each(|i| {
+        // Use a parallel implementation of Warshall's algorithm to determine
+        // transitivity
+        (0..self.len()).into_par_iter().try_for_each(|i| {
             for j in 0..self.len() {
                 for k in 0..self.len() {
                     if self.matrix[j][k] != self.matrix[j][k] | (self.matrix[j][i] & self.matrix[i][k]) {
@@ -188,28 +193,61 @@ impl<const S: usize> Matrix<S> {
                 }
             }
             Some(())
-        }) {
-            Some(_) => true,
-            None => false,
-        }
+        }).is_some()
     }
 
     /// Tests if the matrix is an equivalence relation
     fn is_equivalence(&self) -> bool {
         self.is_reflexive()
-            && self.is_irreflexive()
+            && self.is_symmetric()
             && self.is_transitive()
     }
 
-    /// Makes the current matrix transitive
-    fn make_transitive(&mut self) {
-        for k in 0..self.len() {
-            for i in 0..self.len() {
-                let v2 = self.matrix[i][k];
-                for j in 0..self.len() {
-                    self.matrix[i][j] |= v2 & self.matrix[k][j];
+    /// Makes the current matrix reflexive by computing its reflexive closure
+    fn make_reflexive(&self) -> Self {
+        let mut output_matrix = self.matrix.clone();
+
+        for i in 0..output_matrix.len() {
+            output_matrix[i][i] = 1
+        }
+
+        Self {
+            matrix: output_matrix
+        }
+    }
+
+    /// Makes the current matrix symmetric by computing its symmetric closure
+    fn make_symmetric(&self) -> Self {
+        let mut output_matrix = self.matrix.clone();
+
+        for i in 0..output_matrix.len() {
+            for x in 0..output_matrix.len() {
+                if output_matrix[x][i] != output_matrix[i][x] {
+                    (output_matrix[x][i], output_matrix[i][x]) = (1, 1)
                 }
             }
+        }
+
+        Self {
+            matrix: output_matrix
+        }
+    }
+
+    /// Makes the current matrix transitive by computing its transitive closure
+    fn make_transitive(&self) -> Self {
+        let mut output_matrix = self.matrix.clone();
+
+        for k in 0..output_matrix.len() {
+            for i in 0..output_matrix.len() {
+                let v2 = output_matrix[i][k];
+                for j in 0..output_matrix.len() {
+                    output_matrix[i][j] |= v2 & output_matrix[k][j];
+                }
+            }
+        }
+
+        Self {
+            matrix: output_matrix
         }
     }
 }
@@ -217,6 +255,8 @@ impl<const S: usize> Matrix<S> {
 #[cfg(test)]
 mod matrix {
     use crate::Matrix;
+
+    /* Checking that something is */
 
     #[test]
     fn reflexive() {
@@ -288,5 +328,209 @@ mod matrix {
                 [0, 0, 0, 0]
             ].into()).is_transitive()
         );
+    }
+
+    #[test]
+    fn equivalence() {
+        let matrix = Matrix::new([
+            [1, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 1, 1, 0],
+            [0, 0, 0, 1]
+        ].into());
+
+        // If it's all of these...
+        assert!(matrix.is_reflexive());
+        assert!(matrix.is_symmetric());
+        assert!(matrix.is_transitive());
+
+        // Then it's also an equivalence relation!
+        assert!(matrix.is_equivalence());
+    }
+
+    /* Checking that something is not */
+
+    #[test]
+    fn not_reflexive() {
+        assert!(
+            !Matrix::new([
+                [1, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+                [0, 0, 0, 1]
+            ].into()).is_reflexive()
+        );
+    }
+
+    #[test]
+    fn not_irreflexive() {
+        assert!(
+            !Matrix::new([
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [1, 1, 1, 1],
+                [0, 1, 1, 0]
+            ].into()).is_irreflexive()
+        );
+    }
+
+    #[test]
+    fn not_symmetric() {
+        assert!(
+            !Matrix::new([
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [0, 1, 1, 1],
+                [1, 1, 1, 0]
+            ].into()).is_symmetric()
+        );
+    }
+
+    #[test]
+    fn not_antisymmetric() {
+        assert!(
+            !Matrix::new([
+                [0, 0, 0, 1],
+                [1, 0, 1, 0],
+                [1, 1, 0, 1],
+                [0, 1, 0, 1]
+            ].into()).is_antisymmetric()
+        );
+    }
+
+    #[test]
+    fn not_asymmetric() {
+        assert!(
+            !Matrix::new([
+                [0, 0, 0, 1],
+                [1, 0, 0, 0],
+                [1, 1, 1, 1],
+                [0, 1, 0, 0]
+            ].into()).is_asymmetric()
+        );
+    }
+
+    #[test]
+    fn not_transitive() {
+        assert!(
+            !Matrix::new([
+                [1, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+                [0, 0, 0, 1]
+            ].into()).is_transitive()
+        );
+    }
+
+    #[test]
+    fn not_equivalence() {
+        assert!(
+            !Matrix::new([
+                [1, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 1],
+                [0, 0, 0, 1]
+            ].into()).is_reflexive()
+        );
+    }
+
+    /* Computing Closure Tests */
+
+    #[test]
+    fn make_reflexive() {
+        let matrix = Matrix::new([
+            [1, 1, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1]
+        ].into());
+
+        // It isn't reflexive
+        assert!(!matrix.is_reflexive());
+
+        let closure = matrix.make_reflexive();
+
+        // Now it is!
+        assert!(closure.is_reflexive());
+    }
+
+    #[test]
+    fn make_symmetric() {
+        let matrix = Matrix::new([
+            [0, 1, 1, 1],
+            [1, 0, 1, 1],
+            [0, 1, 1, 1],
+            [1, 1, 1, 0]
+        ].into());
+
+        // It isn't symmetric
+        assert!(!matrix.is_symmetric());
+
+        let closure = matrix.make_symmetric();
+
+        // Now it is!
+        assert!(closure.is_symmetric());
+    }
+
+    #[test]
+    fn make_transitive() {
+        let matrix = Matrix::new([
+            [1, 1, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1]
+        ].into());
+
+        // It isn't symmetric
+        assert!(!matrix.is_transitive());
+
+        let closure = matrix.make_transitive();
+
+        // Now it is!
+        assert!(closure.is_transitive());
+    }
+
+    /* Edge cases */
+
+    #[test]
+    fn all_zeroes() {
+        let matrix = Matrix::new([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ].into());
+
+        assert!(matrix.is_reflexive());
+        assert!(matrix.is_symmetric());
+        assert!(matrix.is_transitive());
+        assert!(matrix.is_equivalence());
+    }
+
+    #[test]
+    fn all_ones() {
+        let matrix = Matrix::new([
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1]
+        ].into());
+
+        assert!(matrix.is_reflexive());
+        assert!(matrix.is_symmetric());
+        assert!(matrix.is_transitive());
+        assert!(matrix.is_equivalence());
+    }
+
+    #[test]
+    fn one_by_one() {
+        let matrix = Matrix::new([
+            [0]
+        ].into());
+
+        assert!(!matrix.is_reflexive());
+        assert!(matrix.is_symmetric());
+        assert!(matrix.is_transitive());
+        assert!(!matrix.is_equivalence());
     }
 }
