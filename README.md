@@ -13,15 +13,30 @@ cd relations-rs
 ```
 
 ## Running
-After rust is installed, simply use the following command to compile and run
-the program:
+Simply use the following command to compile and run the program:
 ```
-cargo run --release
+cargo run
 ```
-If you wish to run the unit tests as well, use the command:
+
+The input matrix can be adjusted by modifying the matrix at the beginning of
+the `main` function. Ensure it is square, otherwise it will not compile.
+```rust
+// Modify this matrix
+let input_matrix = [
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [1, 0, 1, 1]
+];
+```
+
+## Testing
+To run the unit tests, use the command:
 ```
 cargo test
 ```
 ## Example Outputs
-![image](https://github.com/G2-Games/relations-rs/assets/72430668/5cc8a0c9-d7f7-469f-91a3-769f060fac51)
-![image](https://github.com/G2-Games/relations-rs/assets/72430668/04fb3c52-0bdb-4e75-b34f-4fa11f5a46c9)
+![image](https://github.com/G2-Games/relations-rs/assets/72430668/2306f2de-c3fe-4554-95f1-e5ca55a49e07)
+![image](https://github.com/G2-Games/relations-rs/assets/72430668/7d424ba7-abff-47df-a8e8-3c6861fb787d)
+![image](https://github.com/G2-Games/relations-rs/assets/72430668/76448ba6-3f6c-4e5d-b799-e252b41efd3b)
+
